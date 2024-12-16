@@ -1,36 +1,61 @@
 //@version=5
 indicator("Purple Dot", overlay=true)
-use = input(true, "Combine the conditions?")
-show_sma_10 = input.bool(true, title="Show 10 Period SMA")
-show_sma_20 = input.bool(true, title="Show 20 Period SMA")
-show_sma_50 = input.bool(true, title="Show 50 Period SMA")
-vol = input(1000000, "Volume above")
-per = input(4, "% check")
-roc = math.abs(ta.roc(close, 1)) // calcs rate change
-check = volume >= vol // checks volume
-condition1 = roc >= per 
 
-// Satisfying 3 conditions 
+// Inputs for conditions
+useCombo = input.bool(true, "Combine the conditions?")
+volumeThreshold = input.int(1000000, "Volume above")
+percentageCheck = input.float(4.0, "% check")
+
+// Calculate conditions
+roc = math.abs(ta.roc(close, 1))  // Calculate rate of change
+volumeCondition = volume >= volumeThreshold
+rocCondition = roc >= percentageCheck
+
+// Check timeframe and conditions
 isTimeFrameDaily = timeframe.isdaily
-isROCFive = isTimeFrameDaily ? condition1 : na
-shouldPlotShape = isROCFive ? check : na
+isROCCondition = isTimeFrameDaily ? rocCondition : na
+shouldPlotShape = useCombo ? (isROCCondition and volumeCondition) : isROCCondition
 
 plotshape(shouldPlotShape, style=shape.circle, color=color.purple, location=location.belowbar)
+
+// Inputs for SMA 10
+show_sma_10 = input.bool(true, title="Show 10 Period SMA")
+sma_10_color = input.color(color.green, title="10 SMA Color")
+sma_10_width = input.int(1, minval=1, maxval=5, title="10 SMA Line Width")
+sma_10_style_input = input.string("solid", options=["solid", "dotted", "dashed"], title="10 SMA Line Style")
+
+// Inputs for SMA 20
+show_sma_20 = input.bool(true, title="Show 20 Period SMA")
+sma_20_color = input.color(color.navy, title="20 SMA Color")
+sma_20_width = input.int(1, minval=1, maxval=5, title="20 SMA Line Width")
+sma_20_style_input = input.string("solid", options=["solid", "dotted", "dashed"], title="20 SMA Line Style")
+
+// Inputs for SMA 50
+show_sma_50 = input.bool(true, title="Show 50 Period SMA")
+sma_50_color = input.color(color.fuchsia, title="50 SMA Color")
+sma_50_width = input.int(1, minval=1, maxval=5, title="50 SMA Line Width")
+sma_50_style_input = input.string("solid", options=["solid", "dotted", "dashed"], title="50 SMA Line Style")
+
+// Map line styles for SMA inputs
+plot_style_10 = sma_10_style_input == "solid" ? plot.style_line : 
+   sma_10_style_input == "dotted" ? plot.style_circles : plot.style_circles
+plot_style_20 = sma_20_style_input == "solid" ? plot.style_line : 
+   sma_20_style_input == "dotted" ? plot.style_circles : plot.style_circles
+plot_style_50 = sma_50_style_input == "solid" ? plot.style_line : 
+   sma_50_style_input == "dotted" ? plot.style_circles : plot.style_circles
 
 // SMA calculations
 tenMA = ta.sma(close, 10)
 twentyMA = ta.sma(close, 20)
 fiftyMA = ta.sma(close, 50)
 
-isTimeFrameWeekly = timeframe.isweekly
-isTimeFrameDailyOrWeekly = isTimeFrameDaily or isTimeFrameWeekly
-
-// Plot SMAs based on visibility toggles
-plot((isTimeFrameDailyOrWeekly and show_sma_10) ? tenMA : na, color=color.green, title="10 Period SMA")
-plot((isTimeFrameDailyOrWeekly and show_sma_20) ? twentyMA : na, color=color.navy, title="20 Period SMA")
-plot((isTimeFrameDailyOrWeekly and show_sma_50) ? fiftyMA : na, color=color.fuchsia, title="50 Period SMA")
+// Plot SMAs with customizable styles
+plot(show_sma_10 ? tenMA : na, color=sma_10_color, linewidth=sma_10_width, style=plot_style_10, title="10 Period SMA")
+plot(show_sma_20 ? twentyMA : na, color=sma_20_color, linewidth=sma_20_width, style=plot_style_20, title="20 Period SMA")
+plot(show_sma_50 ? fiftyMA : na, color=sma_50_color, linewidth=sma_50_width, style=plot_style_50, title="50 Period SMA")
 
 // VWAP
 vwap = ta.vwap(close)
-shouldVWAP = timeframe.period == "1" or timeframe.period == "5" or timeframe.period == "15" or timeframe.period == "30" 
+shouldVWAP = timeframe.isdaily == false and (timeframe.period == "1" or 
+   timeframe.period == "5" or timeframe.period == "15" or timeframe.period == "30")
 plot(shouldVWAP ? vwap : na, color=color.red, title="VWAP")
