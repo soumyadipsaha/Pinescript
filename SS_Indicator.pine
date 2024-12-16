@@ -1,0 +1,36 @@
+//@version=5
+indicator("Purple Dot", overlay=true)
+use = input(true, "Combine the conditions?")
+show_sma_10 = input.bool(true, title="Show 10 Period SMA")
+show_sma_20 = input.bool(true, title="Show 20 Period SMA")
+show_sma_50 = input.bool(true, title="Show 50 Period SMA")
+vol = input(1000000, "Volume above")
+per = input(4, "% check")
+roc = math.abs(ta.roc(close, 1)) // calcs rate change
+check = volume >= vol // checks volume
+condition1 = roc >= per 
+
+// Satisfying 3 conditions 
+isTimeFrameDaily = timeframe.isdaily
+isROCFive = isTimeFrameDaily ? condition1 : na
+shouldPlotShape = isROCFive ? check : na
+
+plotshape(shouldPlotShape, style=shape.circle, color=color.purple, location=location.belowbar)
+
+// SMA calculations
+tenMA = ta.sma(close, 10)
+twentyMA = ta.sma(close, 20)
+fiftyMA = ta.sma(close, 50)
+
+isTimeFrameWeekly = timeframe.isweekly
+isTimeFrameDailyOrWeekly = isTimeFrameDaily or isTimeFrameWeekly
+
+// Plot SMAs based on visibility toggles
+plot((isTimeFrameDailyOrWeekly and show_sma_10) ? tenMA : na, color=color.green, title="10 Period SMA")
+plot((isTimeFrameDailyOrWeekly and show_sma_20) ? twentyMA : na, color=color.navy, title="20 Period SMA")
+plot((isTimeFrameDailyOrWeekly and show_sma_50) ? fiftyMA : na, color=color.fuchsia, title="50 Period SMA")
+
+// VWAP
+vwap = ta.vwap(close)
+shouldVWAP = timeframe.period == "1" or timeframe.period == "5" or timeframe.period == "15" or timeframe.period == "30" 
+plot(shouldVWAP ? vwap : na, color=color.red, title="VWAP")
